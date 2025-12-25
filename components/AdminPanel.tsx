@@ -3,152 +3,157 @@ import React, { useState } from 'react';
 import { Locker, LockerStatus } from '../types';
 
 interface AdminPanelProps {
-  onAddLocker: (locker: Omit<Locker, 'history'>) => void;
-  onBulkDeploy: (prefix: string, start: number, end: number, location: string) => void;
+  onAddLocker: (locker: Omit<Locker, 'id' | 'history'>) => void;
+  onDeleteLocker: (id: string) => void;
   onSetStatus: (id: string, status: LockerStatus) => void;
   lockers: Locker[];
 }
 
-export const AdminPanel: React.FC<AdminPanelProps> = ({ onAddLocker, onBulkDeploy, onSetStatus, lockers }) => {
-  const [activeTab, setActiveTab] = useState<'single' | 'bulk' | 'management'>('single');
-  const [single, setSingle] = useState({ name: '', location: '' });
-  const [bulk, setBulk] = useState({ prefix: 'L-', start: 1, end: 10, location: '' });
+export const AdminPanel: React.FC<AdminPanelProps> = ({ onAddLocker, onDeleteLocker, onSetStatus, lockers }) => {
+  const [activeTab, setActiveTab] = useState<'add' | 'management'>('add');
+  const [lockerNumber, setLockerNumber] = useState('');
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  const handleAdd = () => {
+    const trimmed = lockerNumber.trim();
+    if (!trimmed) return;
+    onAddLocker({ 
+      name: trimmed, 
+      location: 'Not Specified', 
+      status: LockerStatus.OPEN, 
+      lastChangedAt: Date.now() 
+    });
+    setLockerNumber('');
+    setActiveTab('management');
+  };
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-      <div className="flex border-b">
-        {(['single', 'bulk', 'management'] as const).map((tab) => (
+    <div className="bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden animate-pop-in">
+      <div className="flex border-b bg-slate-50">
+        {(['add', 'management'] as const).map((tab) => (
           <button
             key={tab}
-            onClick={() => setActiveTab(tab)}
-            className={`flex-1 px-4 py-3 font-semibold capitalize transition-colors ${
-              activeTab === tab ? 'bg-slate-50 text-blue-600 border-b-2 border-blue-600' : 'text-slate-500 hover:text-slate-700'
+            onClick={() => { setActiveTab(tab); setDeletingId(null); }}
+            className={`flex-1 px-4 py-4 font-black text-xs uppercase tracking-widest transition-all ${
+              activeTab === tab ? 'bg-white text-blue-600 border-b-4 border-blue-600' : 'text-slate-500 hover:text-slate-700'
             }`}
           >
-            {tab.replace('_', ' ')}
+            {tab === 'add' ? 'Add Locker' : 'Management Table'}
           </button>
         ))}
       </div>
 
-      <div className="p-6">
-        {activeTab === 'single' && (
-          <div className="space-y-4 max-w-md">
-            <h3 className="text-lg font-bold text-slate-800">Add Single Unit</h3>
-            <input
-              placeholder="Unit Name (e.g. L-101)"
-              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-              value={single.name}
-              onChange={(e) => setSingle({ ...single, name: e.target.value })}
-            />
-            <input
-              placeholder="Location (e.g. Pump Station A)"
-              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-              value={single.location}
-              onChange={(e) => setSingle({ ...single, location: e.target.value })}
-            />
-            <button
-              onClick={() => {
-                onAddLocker({ id: crypto.randomUUID(), name: single.name, location: single.location, status: LockerStatus.OPEN, lastChangedAt: Date.now() });
-                setSingle({ name: '', location: '' });
-              }}
-              className="w-full bg-slate-900 text-white py-2 rounded-lg font-bold hover:bg-slate-800 transition-colors"
-            >
-              Add Unit
-            </button>
-          </div>
-        )}
-
-        {activeTab === 'bulk' && (
-          <div className="space-y-4 max-w-md">
-            <h3 className="text-lg font-bold text-slate-800">Bulk Deploy Units</h3>
-            <div className="grid grid-cols-2 gap-4">
-              <input
-                placeholder="Prefix (L-)"
-                className="px-4 py-2 border rounded-lg outline-none"
-                value={bulk.prefix}
-                onChange={(e) => setBulk({ ...bulk, prefix: e.target.value })}
-              />
-              <input
-                placeholder="Location"
-                className="px-4 py-2 border rounded-lg outline-none"
-                value={bulk.location}
-                onChange={(e) => setBulk({ ...bulk, location: e.target.value })}
-              />
+      <div className="p-8">
+        {activeTab === 'add' && (
+          <div className="space-y-6 max-w-md mx-auto py-12">
+            <div className="text-center space-y-2">
+              <div className="bg-blue-100 text-blue-600 w-16 h-16 rounded-3xl flex items-center justify-center mx-auto mb-4">
+                 <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 4v16m8-8H4"></path></svg>
+              </div>
+              <h3 className="text-2xl font-black text-slate-900">Provision New Unit</h3>
+              <p className="text-sm text-slate-500">Enter the unique LOTO locker identifier.</p>
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-3">
               <input
-                type="number"
-                placeholder="Start Range"
-                className="px-4 py-2 border rounded-lg outline-none"
-                value={bulk.start}
-                onChange={(e) => setBulk({ ...bulk, start: parseInt(e.target.value) })}
+                placeholder="e.g. 101, UNIT-A"
+                className="w-full px-5 py-4 border-2 border-slate-200 rounded-2xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 outline-none text-xl font-black text-center"
+                value={lockerNumber}
+                onChange={(e) => setLockerNumber(e.target.value.toUpperCase())}
+                onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
+                autoFocus
               />
-              <input
-                type="number"
-                placeholder="End Range"
-                className="px-4 py-2 border rounded-lg outline-none"
-                value={bulk.end}
-                onChange={(e) => setBulk({ ...bulk, end: parseInt(e.target.value) })}
-              />
+              <button
+                onClick={handleAdd}
+                disabled={!lockerNumber.trim()}
+                className="w-full bg-slate-900 text-white px-6 py-4 rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-slate-800 transition-all shadow-xl disabled:opacity-50"
+              >
+                Deploy Unit
+              </button>
             </div>
-            <button
-              onClick={() => onBulkDeploy(bulk.prefix, bulk.start, bulk.end, bulk.location)}
-              className="w-full bg-blue-600 text-white py-2 rounded-lg font-bold hover:bg-blue-700 transition-colors"
-            >
-              Deploy Range
-            </button>
           </div>
         )}
 
         {activeTab === 'management' && (
-          <div className="space-y-4 overflow-x-auto">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-bold text-slate-800">Fleet Quick Status</h3>
-              <p className="text-xs text-slate-500 italic">Overrides do not require authorization but are logged in report snapshot.</p>
+          <div className="space-y-4">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-lg font-black text-slate-900 uppercase tracking-tight">Fleet Overview</h3>
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest bg-slate-100 px-3 py-1 rounded-full">
+                {lockers.length} Registered
+              </span>
             </div>
-            <table className="w-full text-left text-sm border-collapse">
-              <thead>
-                <tr className="bg-slate-50">
-                  <th className="px-4 py-2 font-bold border-b text-slate-600">ID</th>
-                  <th className="px-4 py-2 font-bold border-b text-slate-600">Location</th>
-                  <th className="px-4 py-2 font-bold border-b text-slate-600">Status</th>
-                  <th className="px-4 py-2 font-bold border-b text-slate-600">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {lockers.map((l) => (
-                  <tr key={l.id} className="hover:bg-slate-50 transition-colors">
-                    <td className="px-4 py-2 border-b font-medium">{l.name}</td>
-                    <td className="px-4 py-2 border-b text-slate-500">{l.location}</td>
-                    <td className="px-4 py-2 border-b">
-                      <span className={`px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider shadow-sm border ${
-                        l.status === LockerStatus.OPEN ? 'bg-green-100 text-green-700 border-green-200' :
-                        l.status === LockerStatus.LOCKED ? 'bg-red-100 text-red-700 border-red-200' :
-                        'bg-slate-200 text-slate-700 border-slate-300'
-                      }`}>
-                        {l.status}
-                      </span>
-                    </td>
-                    <td className="px-4 py-2 border-b">
-                      <select 
-                        className="text-xs border-2 border-slate-200 rounded-lg p-1 font-bold outline-none focus:border-blue-500"
-                        value={l.status}
-                        onChange={(e) => onSetStatus(l.id, e.target.value as LockerStatus)}
-                      >
-                        <option value={LockerStatus.OPEN}>OPEN</option>
-                        <option value={LockerStatus.LOCKED}>LOCKED</option>
-                        <option value={LockerStatus.MISSING}>MISSING</option>
-                      </select>
-                    </td>
+            
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-sm border-collapse">
+                <thead>
+                  <tr className="border-b-2 border-slate-100">
+                    <th className="px-4 py-4 font-black text-slate-400 uppercase text-[10px] tracking-widest">ID / Name</th>
+                    <th className="px-4 py-4 font-black text-slate-400 uppercase text-[10px] tracking-widest">Status</th>
+                    <th className="px-4 py-4 font-black text-slate-400 uppercase text-[10px] tracking-widest">Override</th>
+                    <th className="px-4 py-4 font-black text-slate-400 uppercase text-[10px] tracking-widest text-right">Actions</th>
                   </tr>
-                ))}
-                {lockers.length === 0 && (
-                  <tr>
-                    <td colSpan={4} className="px-4 py-8 text-center text-slate-400">No units in fleet.</td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-slate-50">
+                  {lockers.map((l) => (
+                    <tr key={l.id} className="group hover:bg-slate-50 transition-colors">
+                      <td className="px-4 py-5 font-black text-slate-900 text-base">{l.name}</td>
+                      <td className="px-4 py-5">
+                        <span className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider border ${
+                          l.status === LockerStatus.OPEN ? 'bg-green-50 text-green-700 border-green-100' :
+                          l.status === LockerStatus.LOCKED ? 'bg-red-50 text-red-700 border-red-100' :
+                          'bg-slate-100 text-slate-700 border-slate-200'
+                        }`}>
+                          {l.status}
+                        </span>
+                      </td>
+                      <td className="px-4 py-5">
+                        <select 
+                          className="text-[10px] border-2 border-slate-200 rounded-lg p-1.5 font-black uppercase outline-none focus:border-blue-500 bg-white"
+                          value={l.status}
+                          onChange={(e) => onSetStatus(l.id, e.target.value as LockerStatus)}
+                        >
+                          <option value={LockerStatus.OPEN}>OPEN</option>
+                          <option value={LockerStatus.LOCKED}>LOCKED</option>
+                          <option value={LockerStatus.MISSING}>MISSING</option>
+                        </select>
+                      </td>
+                      <td className="px-4 py-5 text-right">
+                        {deletingId === l.id ? (
+                          <div className="flex justify-end gap-2 animate-pop-in">
+                            <button 
+                              onClick={() => onDeleteLocker(l.id)} 
+                              className="bg-red-600 text-white px-3 py-1.5 rounded-lg text-[10px] font-black uppercase hover:bg-red-700"
+                            >
+                              Confirm
+                            </button>
+                            <button 
+                              onClick={() => setDeletingId(null)} 
+                              className="bg-slate-200 text-slate-600 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase hover:bg-slate-300"
+                            >
+                              No
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => setDeletingId(l.id)}
+                            className="text-slate-300 hover:text-red-600 p-2 hover:bg-red-50 rounded-xl transition-all"
+                            title="Delete Locker"
+                          >
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                  {lockers.length === 0 && (
+                    <tr>
+                      <td colSpan={4} className="px-4 py-20 text-center text-slate-400 italic">Fleet is empty. Provision a unit to begin.</td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
       </div>

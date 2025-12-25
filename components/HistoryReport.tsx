@@ -12,7 +12,7 @@ export const HistoryReport: React.FC<HistoryReportProps> = ({ lockers }) => {
   ).sort((a, b) => b.timestamp - a.timestamp);
 
   const downloadCSV = () => {
-    const headers = ['Timestamp', 'Unit', 'From', 'To', 'Technician', 'Supervisor', 'Foreman'];
+    const headers = ['Timestamp', 'Unit', 'From', 'To', 'Technician', 'Supervisor', 'Foreman', 'Equipment', 'Operator', 'Location'];
     const rows = allHistory.map(h => [
       new Date(h.timestamp).toLocaleString(),
       h.unitName,
@@ -20,7 +20,10 @@ export const HistoryReport: React.FC<HistoryReportProps> = ({ lockers }) => {
       h.toStatus,
       h.technician,
       h.supervisor,
-      h.foreman
+      h.foreman,
+      h.equipment,
+      h.operator,
+      h.location
     ]);
 
     const csvContent = [headers, ...rows].map(e => e.join(",")).join("\n");
@@ -49,14 +52,15 @@ export const HistoryReport: React.FC<HistoryReportProps> = ({ lockers }) => {
           Export CSV
         </button>
       </div>
-      <div className="overflow-x-auto max-h-[500px]">
+      <div className="overflow-x-auto max-h-[600px]">
         <table className="w-full text-left text-sm">
           <thead className="sticky top-0 bg-slate-100 z-10 shadow-sm">
             <tr>
               <th className="px-6 py-3 font-bold border-b text-slate-700">Date/Time</th>
               <th className="px-6 py-3 font-bold border-b text-slate-700">Unit ID</th>
               <th className="px-6 py-3 font-bold border-b text-slate-700">Transition</th>
-              <th className="px-6 py-3 font-bold border-b text-slate-700">Authorized By</th>
+              <th className="px-6 py-3 font-bold border-b text-slate-700">Job Detail</th>
+              <th className="px-6 py-3 font-bold border-b text-slate-700">Authorization</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
@@ -68,22 +72,29 @@ export const HistoryReport: React.FC<HistoryReportProps> = ({ lockers }) => {
                 <td className="px-6 py-4 font-bold text-slate-900">{h.unitName}</td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="flex items-center gap-2">
-                    <span className="text-slate-400">{h.fromStatus}</span>
+                    <span className="text-slate-400 text-xs">{h.fromStatus}</span>
                     <svg className="w-3 h-3 text-slate-300" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd"></path></svg>
-                    <span className={`font-bold ${h.toStatus === 'LOCKED' ? 'text-red-600' : h.toStatus === 'OPEN' ? 'text-green-600' : 'text-slate-500'}`}>{h.toStatus}</span>
+                    <span className={`font-black tracking-wider text-xs ${h.toStatus === 'LOCKED' ? 'text-red-600' : h.toStatus === 'OPEN' ? 'text-green-600' : 'text-slate-500'}`}>{h.toStatus}</span>
+                  </div>
+                </td>
+                <td className="px-6 py-4">
+                  <div className="flex flex-col">
+                    <span className="font-bold text-slate-800">Equip: {h.equipment}</span>
+                    <span className="text-xs text-slate-500">Loc: {h.location}</span>
+                    <span className="text-xs text-slate-500 italic">Operator: {h.operator}</span>
                   </div>
                 </td>
                 <td className="px-6 py-4">
                   <div className="flex flex-col">
                     <span className="font-medium text-slate-800">{h.technician} (Tech)</span>
-                    <span className="text-xs text-slate-500">Sup: {h.supervisor} | For: {h.foreman}</span>
+                    <span className="text-[10px] text-slate-400 uppercase font-bold">S: {h.supervisor} | F: {h.foreman}</span>
                   </div>
                 </td>
               </tr>
             ))}
             {allHistory.length === 0 && (
               <tr>
-                <td colSpan={4} className="px-6 py-12 text-center text-slate-500 italic">No events recorded yet.</td>
+                <td colSpan={5} className="px-6 py-12 text-center text-slate-500 italic">No operational events recorded yet.</td>
               </tr>
             )}
           </tbody>

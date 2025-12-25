@@ -13,6 +13,9 @@ export interface HistoryEntry {
   technician: string;
   supervisor: string;
   foreman: string;
+  equipment: string;
+  operator: string;
+  location: string;
 }
 
 export interface Locker {
@@ -28,6 +31,9 @@ export interface AuthContext {
   technician: string;
   supervisor: string;
   foreman: string;
+  equipment: string;
+  operator: string;
+  location: string;
 }
 
 export interface ToastMessage {
