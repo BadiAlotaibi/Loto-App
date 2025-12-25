@@ -1,0 +1,5 @@
+{
+  "name": "Loto Manager",
+  "description": "A mission-critical lockout-tagout (LOTO) management system featuring real-time tracking, voice announcements via Gemini TTS, and strict safety accountability workflows.",
+  "requestFramePermissions": []
+}
